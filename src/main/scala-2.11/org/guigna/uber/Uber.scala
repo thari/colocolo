@@ -1,7 +1,10 @@
+package org.guigna.uber
 
-import kodkod.ast.{Variable, Formula, Relation}
-import kodkod.instance.{Universe, Bounds}
-import collection.JavaConverters._
+
+import kodkod.ast.{Formula, Relation, Variable}
+import kodkod.instance.{Bounds, Universe}
+
+import scala.collection.JavaConverters._
 /**
   * Created by hariharan on 6/15/16.
   */
@@ -63,10 +66,44 @@ class Uber {
     v1 and b1 and p1
   }
 
+  //Vehicle can be only in one location at any point of time
   def req1() : Formula = {
     val c = Variable.unary("c")
     (c join (Control join uberLoc)).one().forAll(c.oneOf(Vehicle))
   }
+
+  //a passenger can travel only in atmost one car at any point of time
+  def req2() : Formula = {
+    val p = Variable.unary("p")
+    (p join (Control join ride).transpose()).lone().forAll(p.oneOf(Passenger))
+  }
+
+  def req3() : Formula = {
+    val ux = Variable.unary("UberX")
+    ((ux join (Control join ride)) in SinglePassenger).forAll(ux.oneOf(UberX))
+  }
+
+  def req4() : Formula = {
+    val ux = Variable.unary("UberX")
+    (ux join (Control join ride)).lone().forAll(ux.oneOf(UberX))
+  }
+
+  def req5() : Formula = {
+    val p = Variable.unary("p")
+    (p join (Control join passengerLoc)).one().forAll(p.oneOf(Passenger))
+  }
+
+//  def req6() : Formula = {
+//    val u  = Variable.unary("u")
+//    val p = Variable.unary("p")
+//    ((u join (Control join ride)).eq(p)).iff((u join (Control join uberLoc)).eq(p join (Control join passengerLoc)))
+//  }
+
+  def show(): Formula = {
+    req0() and req1() and req2() and req3() and req4() and req5()
+  }
+
+
 
   def bounds(uberx : Int, suv : Int, singleP : Int, groupP : Int, block : Int) : Bounds = {
     var atoms = scala.collection.immutable.List.empty[String]
@@ -115,7 +152,7 @@ class Uber {
     b.bound(SUV, suvB)
     b.bound(SinglePassenger, spB)
     b.bound(GroupPassenger,gpB)
-    b.bound(Block, blockB)
+    b.boundExactly(Block, blockB)
     b.bound(Vehicle, vB)
     b.bound(Passenger, pB)
     b.bound(uberLoc, cB.product(vB).product(blockB))
